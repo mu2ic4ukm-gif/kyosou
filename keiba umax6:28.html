@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>競馬予想</title>
+<style>
+*{box-sizing:border-box}
+body{background:#ffffff;color:#111;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN",sans-serif;margin:0;padding:12px;font-size:14px}
+h1{font-size:15px;color:#333;margin:0 0 10px}
+textarea{width:100%;height:150px;background:#f5f5f7;color:#111;border:1px solid #ccc;border-radius:6px;padding:10px;font-size:13px;font-family:monospace}
+.btn-row{display:flex;gap:8px;margin:8px 0}
+button{background:#c8a84b;color:#111;border:none;padding:10px 24px;font-size:14px;font-weight:bold;cursor:pointer;flex:1;border-radius:4px}
+.btn-clear{background:#666;color:#fff;flex:0 0 90px}
+.err{color:#c00;padding:8px}
+.race-hdr{background:#222;color:#fff;border-radius:6px;padding:10px;margin-bottom:10px;font-size:15px;font-weight:bold}
+.race-hdr .sub{font-size:12px;color:#ccd;font-weight:normal;margin-top:3px}
+.main-tbl{width:100%;border-collapse:collapse;font-size:14px;background:#fff}
+.main-tbl th{color:#555;font-weight:normal;padding:6px 4px;border-bottom:2px solid #333;text-align:center;font-size:12px}
+.main-tbl td{padding:8px 4px;border-bottom:1px solid #ddd;text-align:center;vertical-align:middle;color:#111}
+.main-tbl td.lft{text-align:left}
+.mk{font-size:20px;font-weight:bold;color:#c00}
+.hn{font-size:14px;font-weight:bold;color:#111;white-space:nowrap}
+.jk{font-size:12px;color:#333;white-space:nowrap}
+.dm{color:#d60;font-weight:bold;font-size:16px}
+.nin{color:#333}
+/* 枠番色（netkeiba標準。文字色は枠ごとに見えるよう固定） */
+.num{display:inline-block;min-width:28px;text-align:center;font-weight:bold;padding:4px 7px;border-radius:4px}
+.waku1{background:#fff;color:#000;border:1.5px solid #333}
+.waku2{background:#222;color:#fff}
+.waku3{background:#e44;color:#fff}
+.waku4{background:#28b;color:#fff}
+.waku5{background:#ed3;color:#000}
+.waku6{background:#3a3;color:#fff}
+.waku7{background:#e83;color:#fff}
+.waku8{background:#e6a;color:#fff}
+.waku0{background:#888;color:#fff}
+.sec{font-size:13px;color:#444;margin:18px 0 8px;font-weight:bold}
+.detail{border:1px solid #ddd;border-radius:6px;margin-bottom:8px;padding:8px;background:#fafafa}
+.dhdr{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.dtbl{width:100%;border-collapse:collapse;font-size:13px}
+.chk{font-weight:bold;color:#333}
+.cuts{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 8px}
+.cut{font-size:11px;background:#fde8e8;color:#c00;padding:2px 6px;border-radius:4px}
+.keep{font-size:11px;background:#e3f5ea;color:#0a7;padding:2px 6px;border-radius:4px;font-weight:bold}
+.dtbl th{color:#666;font-weight:normal;padding:3px 6px;border-bottom:1px solid #ccc;text-align:center;font-size:11px}
+.dtbl td{padding:4px 6px;border-bottom:1px solid #eee;text-align:center;color:#222}
+.dtbl td.lft{text-align:left}
+.dtbl td.worst{background:#fdd;color:#c00;font-weight:bold}
+.dtbl td.best{background:#dde9ff;color:#06c;font-weight:bold}
+.dtbl td.green{background:#d8f0d8;color:#191;font-weight:bold}
+.dtbl td.yellow{background:#fdf3a0;color:#a80;font-weight:bold}
+.bg{font-size:11px;color:#888}
+.bonno{font-size:18px;font-weight:bold;color:#c00;text-align:center;margin:14px 0 8px}
+.kekkai{position:relative;border:3px double #b8860b;border-radius:6px;padding:34px 16px 30px;margin:16px 4px;background:linear-gradient(#fffef7,#fff)}
+.kekkai::before{content:"";position:absolute;inset:6px;border:1px solid #d9c089;border-radius:4px;pointer-events:none}
+.kuji{text-align:center;color:#5b3a00;font-weight:bold;letter-spacing:1px;font-size:13px;margin-bottom:6px}
+.gobosei{text-align:center;color:#b8860b;font-size:30px;line-height:1;margin-bottom:4px}
+.harae{text-align:center;color:#5b3a00;font-size:12px;margin-top:10px;font-weight:bold}
+.salt{position:absolute;font-size:20px;color:#888;line-height:1}
+.s-tl{top:4px;left:6px}.s-tr{top:4px;right:6px}.s-bl{bottom:4px;left:6px}.s-br{bottom:4px;right:6px}
+.engi{text-align:center;color:#a8810a;font-size:12px;margin-bottom:6px}
+.luck{text-align:center;color:#c9960a;font-weight:bold;font-size:13px;margin:6px 0 10px;letter-spacing:.5px}
+.luck2{color:#c9960a;margin-top:4px}
+.dens{font-size:11px;color:#0a7;font-weight:bold;margin-left:6px}
+.sa{font-size:11px;color:#888;margin-left:6px}
+.samesa{font-size:11px;color:#c00;font-weight:bold;margin-left:6px}
+.kya{font-size:11px;color:#16a;font-weight:bold;margin-left:6px}
+.kyam{font-size:11px;color:#c00;font-weight:bold;margin-left:6px}
+.dtbl td.peak{background:#c2efe8;color:#077;font-weight:bold}
+.cond{color:#666;font-size:11px}
+.dtbl td.cdist{background:#e7e0ff;color:#63c;font-weight:bold;font-size:11px}
+.dtbl td.ccourse{background:#ffe2c2;color:#c60;font-weight:bold;font-size:11px}
+.dtbl td.cboth{background:#c2efe8;color:#077;font-weight:bold;font-size:11px}
+</style>
+</head>
+<body>
+<h1>競馬予想</h1>
+<textarea id="inp" placeholder="出馬表データを貼り付け"></textarea>
+<div class="btn-row">
+<button onclick="run()">読み込む</button>
+<button class="btn-clear" onclick="clearAll()">クリア</button>
+</div>
+<div id="out"></div>
+
+<script>
+function clearAll(){
+  document.getElementById('inp').value='';
+  document.getElementById('out').innerHTML='';
+  document.getElementById('inp').focus();
+}
+
+function run(){
+  const text=document.getElementById('inp').value;
+  let html='';
+  try{
+    const parsed=parseUmax(text);
+    const field=parsed.horses.length;
+    parsed.horses.forEach(h=>{ h.waku=wakuOf(h.num, field); });
+    scoreByWorst(parsed.horses, parsed.race);
+    html+=renderRace(parsed);
+  }catch(e){
+    html=`<div class="err">エラー: ${e.message}</div>`;
+  }
+  document.getElementById('out').innerHTML=html;
+}
+
+// ───────────────────────────────
+//  uma-x.jp 形式パーサー（着差と3Fを完璧に読む）
+// ───────────────────────────────
+function parseUmax(text){
+  const lines=text.split('\n').map(l=>l.replace(/\r$/,''));
+  const race=parseRaceHeader(lines);
+  const horses=parseHorses(lines);
+  return {race, horses};
+}
+
+// 一行が「意味的に何の行か」を内容から判定する分類器。
+// 場所や順番に依存せず、その行が持っている情報で役割を決める。
+function classifyLine(line){
+  const raw=line;
+  const l=line.trim();
+  if(!l) return {kind:'empty'};
+
+  // タブ区切りで、先頭が着順、次が着差、その後にタイム(分:秒)が含まれる → 過去走の行
+  if(raw.indexOf('\t')>=0){
+    const c=raw.split('\t');
+    const hasTime=c.some(x=>/^\d+:\d+(?:\.\d+)?$/.test(x));
+    if(c.length>=10 && /^\d+$/.test(c[0]) && hasTime){
+      return {kind:'run', cols:c};
+    }
+  }
+
+  // 人気とオッズと各指数値が揃っている → 指数行（馬の評価の行）
+  // 「[数] (数)」が人気とオッズ。S:/SA:/NSA: などの指数が続くことが多い。
+  const idxNinkiOdds=l.match(/\[(\d+)\]\s*\(([\d.]+)\)/);
+  if(idxNinkiOdds){
+    const sm=l.match(/S:(\d+)\s*A:(\d+)\s*SA:(\d+)\s*TSA:(\d+)\s*NSA:(\d+)/);
+    return {kind:'index', ninki:+idxNinkiOdds[1], odds:parseFloat(idxNinkiOdds[2]),
+            s:sm?+sm[1]:null,a:sm?+sm[2]:null,sa:sm?+sm[3]:null,tsa:sm?+sm[4]:null,nsa:sm?+sm[5]:null};
+  }
+
+  // 騎手と斤量を述べている行 → 騎手行。斤量(kg)を持ち、過去走でも指数でもない。
+  // 斤量kgの後ろに馬体重(例 422kg(+2kg))やBが続く形にも対応する。行末固定にしない。
+  if(/\d+(?:\.\d+)?kg/.test(l) && raw.indexOf('\t')<0 && !/[\[\(]\d/.test(l.slice(0,3))){
+    // 枠番(1〜2桁)＋騎手名＋斤量kg。斤量kgの直後で区切る（後続の馬体重等は無視）。
+    let m=l.match(/^\s*(\d{1,2})\s*([^\d].*?)\s*(\d{2}(?:\.\d)?)kg(?:\b|\s|$)/);
+    if(m) return {kind:'jockey', jockey:m[2].trim(), kinryo:parseFloat(m[3]), blinker:/\bB\b/.test(l)};
+    // 枠番なし(初出走など) 騎手名＋斤量kg
+    m=l.match(/^\s*([^\d].*?)\s*(\d{2}(?:\.\d)?)kg(?:\b|\s|$)/);
+    if(m) return {kind:'jockey', jockey:m[1].trim(), kinryo:parseFloat(m[2]), blinker:/\bB\b/.test(l)};
+  }
+
+  // 「初出走」の宣言
+  if(/^初出走$/.test(l)) return {kind:'firstrun'};
+
+  // レースの条件を述べている行 → 距離・サーフェス・馬場を含む。
+  // 「Nm」を含み、芝/ダートや馬場・発走時刻が同居していることが多い。
+  if(/\d{3,4}m/.test(l) && /(ダート|ダ|芝)/.test(l)){
+    const dm=l.match(/(\d{3,4})m/);
+    const surface=/ダート|ﾀﾞ|(?:^|[^新])ダ/.test(l)?'ダ':(/芝/.test(l)?'芝':'');
+    const tm=l.match(/(不良|稍重|重|良)/);
+    const nm=l.match(/^(.+?)\s*\d{3,4}m/);
+    return {kind:'cond', dist:+dm[1], surface, track:tm?tm[1]:'', rName:nm&&nm[1].trim()?nm[1].trim():''};
+  }
+
+  return {kind:'other', text:l};
+}
+
+// レースヘッダ：ヘッダ領域の各行を分類し、意味でレース条件を取る。
+function parseRaceHeader(lines){
+  let venue='', rNum='', dist=0, surface='', track='', rName='';
+  let headerEnd=lines.length;
+  for(let i=0;i<lines.length;i++){ if(parseHorseHead(lines,i)){ headerEnd=i; break; } }
+  for(let i=0;i<headerEnd;i++){
+    const l=lines[i].trim();
+    if(!l) continue;
+    const c=classifyLine(lines[i]);
+    if(c.kind==='cond'){
+      if(!dist) dist=c.dist;
+      if(!surface) surface=c.surface;
+      if(!track) track=c.track;
+      if(!rName && c.rName) rName=c.rName;
+      continue;
+    }
+    // 場名：短い日本語、UIラベルや条件でない最初の語
+    if(!venue && /^[ぁ-んァ-ヶ一-龥]{2,4}$/.test(l) && !/^(予想|過去傾向|荒度|前\d|出馬表|オッズ|新聞|メモ|結果|データ|専門紙|通常)/.test(l)){
+      venue=l; continue;
+    }
+    if(!rNum){ const rm=l.match(/^(\d{1,2})R\b/); if(rm) rNum=rm[1]+'R'; }
+    // 馬場が条件行と別の行にある場合の保険
+    if(!track){ const tm=l.match(/^(不良|稍重|重|良)$/); if(tm) track=tm[1]; }
+  }
+  return {venue, rNum, dist, surface, track, rName};
+}
+
+// 馬ブロックの先頭判定：行頭が「馬番+馬名」で、次行に「kg」(騎手・斤量行)がある
+function parseHorseHead(lines, i){
+  // 馬番(1-2桁)+馬名。馬名は日本語2文字以上、または英字で始まる固有名。
+  const m=lines[i].match(/^(\d{1,2})([ァ-ヶーぁ-ん一-龥Ａ-ＺA-Za-z][^\t]*)$/);
+  if(!m) return null;
+  const name=m[2].trim();
+  // 馬名として不自然なものを除外
+  if(/[\[\(]/.test(name)) return null;
+  if(/kg/.test(name)) return null;
+  // 「c 2c 3c 4c」のような通過順ヘッダ、数字や記号混じりの非馬名を除外。
+  // 馬名は先頭が日本語なら2文字以上の日本語が続く、英字ならアルファベット。スペースや数字で割れない。
+  if(!/^[ァ-ヶーぁ-ん一-龥]{2,}/.test(name) && !/^[Ａ-ＺA-Za-z]{2,}/.test(name)) return null;
+  // 後続にこの馬の騎手行/走破行/初出走があれば馬と確定（位置に依存しない）
+  for(let k=i+1; k<Math.min(i+8, lines.length); k++){
+    const nx=lines[k]||'';
+    if(/^\d{1,2}[ァ-ヶーぁ-ん一-龥Ａ-ＺA-Za-z]/.test(nx) && !/kg/.test(nx) && !/[\[\(]/.test(nx) && nx.indexOf('\t')<0 && k>i+1) break;
+    if(/\d+(?:\.\d+)?kg/.test(nx)) return {num:parseInt(m[1]), name};
+    if(nx.indexOf('\t')>=0 && /^\d+\t/.test(nx)) return {num:parseInt(m[1]), name};
+    if(/^初出走$/.test(nx.trim())) return {num:parseInt(m[1]), name};
+  }
+  return null;
+}
+
+function parseHorses(lines){
+  // 馬の先頭行を全部見つける
+  const heads=[];
+  for(let i=0;i<lines.length;i++){
+    const h=parseHorseHead(lines,i);
+    if(h){ heads.push({num:h.num, name:h.name, line:i}); }
+  }
+  const horses=[];
+  for(let hi=0; hi<heads.length; hi++){
+    const head=heads[hi];
+    const end = hi+1<heads.length ? heads[hi+1].line : lines.length;
+    horses.push(parseHorseBlock(lines, head, end));
+  }
+  return horses;
+}
+
+function parseHorseBlock(lines, head, end){
+  const num=head.num, name=head.name;
+  let jockey='', kinryo=null, ninki=null, odds=null, blinker=false;
+  let s=null,a=null,sa=null,tsa=null,nsa=null;
+  const runs=[];
+
+  for(let j=head.line+1; j<end; j++){
+    const c=classifyLine(lines[j]);
+    if(c.kind==='jockey' && !jockey){
+      jockey=c.jockey; kinryo=c.kinryo; blinker=c.blinker;
+    } else if(c.kind==='index' && ninki===null){
+      ninki=c.ninki; odds=c.odds; s=c.s; a=c.a; sa=c.sa; tsa=c.tsa; nsa=c.nsa;
+    } else if(c.kind==='run'){
+      const r=parseRunCols(c.cols);
+      if(r) runs.push(r);
+    }
+  }
+
+  return {num,name,jockey,kinryo,ninki,odds,blinker,index:{s,a,sa,tsa,nsa},runs};
+}
+
+// 走破データ行を、分類器が切り出したcols配列から読む。
+// 各値はカラムの「意味」で取る：着順=先頭の整数、タイム=分:秒の値、
+// 着差・上がり・3F差はタイムの前後の数値、コース条件はNmを含むカラム。
+function parseRunCols(c){
+  if(!c || c.length<10) return null;
+  if(!/^\d+$/.test(c[0])) return null;
+
+  // タイム（分:秒）のカラムを内容で探す
+  let timeIdx=-1;
+  for(let i=0;i<c.length;i++){ if(/^\d+:\d+(?:\.\d+)?$/.test(c[i])){ timeIdx=i; break; } }
+  if(timeIdx<0) return null;
+
+  const chakujun=parseInt(c[0]);
+  const chakusa = /^[\d.]+$/.test(c[1])? parseFloat(c[1]) : null;   // 着順の次＝着差
+  const timeStr=c[timeIdx];
+  const passage=c[timeIdx+1]||'';                                   // タイムの次＝通過順
+  const agari = c[timeIdx+2]!=null && /^[\d.]+$/.test(c[timeIdx+2]) ? parseFloat(c[timeIdx+2]) : null; // 上がり3F
+  const agariDiff = c[timeIdx+3]!=null && /^[\d.]+$/.test(c[timeIdx+3]) ? parseFloat(c[timeIdx+3]) : null; // 3F差
+
+  // コース条件（Nmを含むカラム）を内容で探す
+  let condIdx=-1;
+  for(let i=0;i<c.length;i++){ if(/\d{3,4}m/.test(c[i])){ condIdx=i; break; } }
+  let dist=null,surface='',venue='',track='',raceName='';
+  if(condIdx>=0){
+    const dm=c[condIdx].match(/(\d{3,4})m/); dist=dm?+dm[1]:null;
+    // ダートは「ﾀﾞ/ダ」と明示される。明示がなく距離が取れていれば芝とみなす。
+    surface=/ﾀﾞ|ダ/.test(c[condIdx])?'ダ':(dist!=null?'芝':'');
+    venue=c[condIdx-1]||'';                       // コースの前＝場名
+    track=c[condIdx+1]||'';                        // コースの次＝馬場
+  }
+  // レース名（末尾付近の「名称(MM/DD)」を内容で探す）
+  for(let i=c.length-1;i>=0;i--){ if(/.+\(\d{2}\/\d{2}\)/.test(c[i])){ raceName=c[i]; break; } }
+
+  return { chakujun, chakusa, timeStr, passage, agari, agariDiff,
+           dist, surface, venue, track, raceName };
+}
+
+// ───────────────────────────────
+//  メンバー間比較：各走（前走〜5走前）で着差・3Fの最悪馬に加点。
+//  同点最悪は全馬に加点。データなしの走は対象外。
+//  合計点が少ない馬ほど良い → 少ない順に ◎○▲△☆
+// ───────────────────────────────
+function scoreByWorst(horses, race){
+  horses.forEach(h=>{
+    h.score=0;         // 良い点(青・薄緑・黄・同条件)を＋、悪い点(赤)を−した最終スコア。
+    h.demerit=0;       // 良い悪い問わず色が付いた延べ回数（表示用に残す）。
+    h.mark='';
+    h.badCount=0; h.goodCount=0; h.greenCount=0; h.yellowCount=0;
+    h.sameDistCount=0; h.sameCourseCount=0; h.sameBothCount=0;
+    h.runs.forEach(r=>{ r.worstChaku=false; r.worstAgari=false; r.worstDiff=false;
+                        r.bestChaku=false;  r.bestAgari=false;  r.bestDiff=false;
+                        r.greenChaku=false; r.yellowChaku=false;
+                        r.greenDiff=false;  r.yellowDiff=false;
+                        r.sameDist=false;   r.sameCourse=false; r.sameBoth=false; });
+  });
+  // 今回と同距離・同コースの判定＆加点（各走ごと）。条件一致は「良い」＝＋。
+  if(race){
+    horses.forEach(h=>{
+      h.runs.forEach(r=>{
+        const distMatch = r.dist!=null && race.dist && r.dist===race.dist;
+        const courseMatch = r.venue && race.venue && r.venue===race.venue
+                          && r.surface && race.surface && r.surface===race.surface;
+        if(distMatch && courseMatch){ r.sameBoth=true;  h.score++; h.demerit++; h.sameBothCount++; }
+        else if(courseMatch){        r.sameCourse=true; h.score++; h.demerit++; h.sameCourseCount++; }
+        else if(distMatch){          r.sameDist=true;   h.score++; h.demerit++; h.sameDistCount++; }
+      });
+    });
+  }
+  for(let idx=0; idx<5; idx++){
+    const entrants = horses.filter(h=>h.runs[idx]);
+    if(entrants.length<2) continue;
+
+    // ── 着差：最悪(最大)＝赤で−1。最良(最小)＝青で+1。 ──
+    // ※1着馬の着差は「2着に離した差」で意味が逆。2着以下の「離された差」と同列に
+    //   比較すると勝ち馬が得をするので、好走加点(青・薄緑・黄)の対象から外す。
+    let wC=-Infinity,bC=Infinity;
+    entrants.forEach(h=>{ const r=h.runs[idx]; const v=r.chakusa;
+      if(v!=null && r.chakujun!==1){ if(v>wC)wC=v; if(v<bC)bC=v; } });
+    entrants.forEach(h=>{ const r=h.runs[idx]; const v=r.chakusa; if(v==null) return;
+      if(r.chakujun===1) return; // 1着馬は着差比較に入れない
+      if(v===wC){ h.score--; h.demerit++; h.badCount++;  r.worstChaku=true; }
+      if(v===bC){ h.score++; h.demerit++; h.goodCount++; r.bestChaku=true; }
+      // 着差0.6以下＝好走。良い＝+1。最上位(青)とかぶれば黄、単独なら薄緑。
+      if(v<=0.6){ h.score++; h.demerit++;
+        if(v===bC){ h.yellowCount++; r.yellowChaku=true; }
+        else { h.greenCount++; r.greenChaku=true; } }
+    });
+
+    // ── 上がり3F：最悪(最大=遅い)＝赤で−1。最良(最小=速い)＝青で+1。 ──
+    let wA=-Infinity,bA=Infinity;
+    entrants.forEach(h=>{ const v=h.runs[idx].agari; if(v!=null){ if(v>wA)wA=v; if(v<bA)bA=v; } });
+    entrants.forEach(h=>{ const v=h.runs[idx].agari; if(v==null) return;
+      if(v===wA){ h.score--; h.demerit++; h.badCount++;  h.runs[idx].worstAgari=true; }
+      if(v===bA){ h.score++; h.demerit++; h.goodCount++; h.runs[idx].bestAgari=true; }
+    });
+
+    // ── 3F差：最悪(最大)＝赤で−1。最良(最小)＝青で+1。 ──
+    let wD=-Infinity,bD=Infinity;
+    entrants.forEach(h=>{ const v=h.runs[idx].agariDiff; if(v!=null){ if(v>wD)wD=v; if(v<bD)bD=v; } });
+    if(wD>-Infinity){
+      entrants.forEach(h=>{ const v=h.runs[idx].agariDiff; if(v==null) return;
+        if(v===wD){ h.score--; h.demerit++; h.badCount++;  h.runs[idx].worstDiff=true; }
+        if(v===bD){ h.score++; h.demerit++; h.goodCount++; h.runs[idx].bestDiff=true; }
+        // 3F差0.6以下＝鋭い脚。良い＝+1。最上位(青)とかぶれば黄、単独なら薄緑。
+        if(v<=0.6){ h.score++; h.demerit++;
+          if(v===bD){ h.yellowCount++; h.runs[idx].yellowDiff=true; }
+          else { h.greenCount++; h.runs[idx].greenDiff=true; } }
+      });
+    }
+  }
+  // ── 濃い一走ボーナス（同条件優先） ──
+  // 各走で取った「良い色」(青・薄緑・黄)の数＝その走の濃さ。
+  // 今回と同コースor同距離(または両方)で出した濃い走を優先して評価する。
+  // 同条件の濃い走があればその最濃を対象に、無ければ全走の最濃を対象にする。
+  // 濃さ2以上で(濃さ−1)点をボーナス。3色で+2、4色で+3。
+  horses.forEach(h=>{
+    h.bestDensity=0; h.densityBonus=0; h.bonusSameCond=false;
+    let sameCondBest=0;   // 同条件(同コor同距or両方)の走の最濃
+    let allBest=0;        // 全走の最濃
+    h.runs.forEach(r=>{
+      let d=0;
+      if(r.bestChaku) d++;
+      if(r.bestAgari) d++;
+      if(r.bestDiff)  d++;
+      if(r.greenChaku||r.yellowChaku) d++;
+      if(r.greenDiff||r.yellowDiff)   d++;
+      r.density=d;
+      if(d>allBest) allBest=d;
+      if((r.sameDist||r.sameCourse||r.sameBoth) && d>sameCondBest) sameCondBest=d;
+    });
+    // 同条件の濃い走があればそれを優先。無ければ全走の最濃。
+    if(sameCondBest>=2){ h.bestDensity=sameCondBest; h.bonusSameCond=true; }
+    else { h.bestDensity=allBest; }
+    if(h.bestDensity>=2){ h.densityBonus=h.bestDensity-1; h.score+=h.densityBonus; }
+  });
+
+  // ── 通過順（脚質）による加点 ──
+  // スタート(最初のコーナー)で2番手以内にいたことがある馬＝+1（前に行ける）。
+  // 4コーナー(最後)で4番手以内にいたことがある馬＝+1（直線で前にいる）。
+  // 1走でもあれば加点。
+  horses.forEach(h=>{
+    h.frontStart=false; h.front4c=false;
+    h.runs.forEach(r=>{
+      const ps=splitPassage(r.passage, r.dist);
+      if(ps.length){
+        const start=ps[0], last=ps[ps.length-1];
+        if(start<=2) h.frontStart=true;
+        if(last<=4)  h.front4c=true;
+      }
+    });
+    if(h.frontStart) h.score++;
+    if(h.front4c)    h.score++;
+  });
+
+  // ── 前走勝ち馬は少しマイナス ──
+  // 前走1着＝昇級初戦になりやすく、相手が強くなって通用しないことが多い。
+  // 勝ちを持ち上げず、むしろ少し割り引く。
+  horses.forEach(h=>{
+    if(h.runs.length>0 && h.runs[0].chakujun===1){ h.score--; h.zensoWin=true; }
+    else h.zensoWin=false;
+  });
+
+  // ── 消去法による印付け ──
+  // 加点で上位を選ぶのでなく、「好走確率の低い条件」に該当する馬を消す守りの手法。
+  // プロの要点を反映：
+  //  ・前走大敗でも上がり上位なら展開不利で能力は高い → 大敗単独では消さない
+  //    （大敗 かつ 脚も使えていない場合のみ消す。巻き返す穴を消さないため）
+  //  ・複数の弱点が絡む馬ほど凡走率が上がる → 該当数が多いほど下位
+  //  ・判定できないファクター（人気が取れない等）は条件を発動させない（誤判定防止）
+  horses.forEach(h=>{
+    const R=h.runs;
+    const cuts=[];
+    h.condDensity=0;
+    R.forEach(r=>{ if((r.sameDist||r.sameCourse||r.sameBoth) && r.density>h.condDensity) h.condDensity=r.density; });
+
+    if(R.length===0){
+      h.cutReasons=['初出走（データなし）']; h.cutCount=99; h.mark=''; return;
+    }
+    const zen=R[0];
+
+    // 今回の馬場（芝/ダート）。適性判定は同じ馬場の走に限る（芝とダートは別物）。
+    const sameSurf = r=> race && race.surface && r.surface && r.surface===race.surface;
+
+    // 決め手の有無：3F差(相手比)0.6以下、または上がり3Fの絶対値が速い(芝34.9以下/ダ37.9以下)。
+    //  ※3F差はそのレースの相手次第で変わるので、絶対的な脚の速さ(上がりタイム)も見る。
+    const fastAgariTh = (race && race.surface==='ﾀﾞ') ? 37.9 : 34.9;
+    const isKickRun = r=> (r.agariDiff!=null && r.agariDiff<=0.6)
+                       || (r.agari!=null && sameSurf(r) && r.agari<=fastAgariTh);
+    const zenKick = isKickRun(zen);
+
+    // 今回条件への「近い条件」：同馬場で、同コース/同距離/近い距離。
+    //  距離許容は競馬の実態に合わせる。短距離(〜1400)は適性がシビアなので±200m、
+    //  中距離以上(1500〜)は1〜2ハロンの延長短縮が利くので±400m。
+    const distTol = (race && race.dist && race.dist>=1500) ? 400 : 200;
+    const nearCond = r=> sameSurf(r) && ( r.sameDist || r.sameCourse || r.sameBoth ||
+       (r.dist!=null && race && race.dist && Math.abs(r.dist-race.dist)<=distTol) );
+
+    // 1) 前走大敗かつ決め手なし：前走10着以下で、その前走で脚も使えていない＝力負け。
+    if(zen.chakujun!=null && zen.chakujun>=10 && !zenKick) cuts.push('前走大敗かつ脚使えず');
+
+    // 2) 適性なし：近い条件(同馬場・近距離)で「3着内」も「僅差(着差0.5以下)」も一度もない。
+    const condOK = R.some(r=> nearCond(r) &&
+        ((r.chakujun!=null && r.chakujun<=3) || (r.chakusa!=null && r.chakusa<=0.5)));
+    if(!condOK) cuts.push('近い条件で通用実績なし');
+
+    // 3) 決め手不足：全走で一度も「鋭い脚(3F差0.6以下 or 速い上がり)」を記録していない。
+    const hasKick = R.some(r=> isKickRun(r));
+    if(!hasKick) cuts.push('決め手なし');
+
+    // 4) 近走総崩れ：直近3走がすべて二桁着順 or すべて着差1.0秒以上の完敗＝現級で力不足
+    const recent=R.slice(0,3);
+    const allBad = recent.length>=2 && recent.every(r=>
+      (r.chakujun!=null && r.chakujun>=10) || (r.chakusa!=null && r.chakusa>=1.0 && r.chakujun!==1));
+    if(allBad) cuts.push('近走総崩れ');
+
+    // 5) 前に行けず決め手もない：先行も4角前もなく、かつ決め手もない＝展開待ちのみ
+    if(!h.frontStart && !h.front4c && !hasKick) cuts.push('前に行けず決め手もなし');
+
+    h.cutReasons=cuts;
+    h.cutCount=cuts.length;
+    h.mark='';
+  });
+
+  // ── 消去後の順位付け（残った馬の中での評価） ──
+  // プロの基準：着差の小ささ・上がりの鋭さ・近走の安定した好走(崩れない地力)で序列。
+  //   ・着差が小さい＝強い相手に僅差　・上がりが速い＝末脚の裏付け
+  //   ・3着内や僅差を続けている＝現級で安定して通用する地力（単発の好走より重い）
+  horses.forEach(h=>{
+    if(h.runs.length===0){ h.rankVal=-999; return; }
+    const R=h.runs;
+    const recent=R.slice(0,4);
+    const minC = Math.min(...recent.map(r=> r.chakusa!=null? r.chakusa : 9));   // 近走の最小着差
+    const minD = Math.min(...recent.map(r=> r.agariDiff!=null? r.agariDiff : 9));// 近走の最小3F差
+    // 近走の安定感：直近4走で3着内・僅差(着差0.5以下)の回数（崩れない地力）
+    const solidCnt = recent.filter(r=> (r.chakujun!=null&&r.chakujun<=3) || (r.chakusa!=null&&r.chakusa<=0.5)).length;
+    // 鋭い脚の回数
+    const kickCnt  = R.filter(r=> r.agariDiff!=null && r.agariDiff<=0.6).length;
+    // 平均着差(近走)＝安定して相手に詰めているか
+    const cs=recent.map(r=>r.chakusa).filter(v=>v!=null);
+    const avgC = cs.length? cs.reduce((s,x)=>s+x,0)/cs.length : 9;
+    // 評価値：最小着差・最小3F差(瞬間の強さ)＋安定好走回数(地力)＋平均着差の良さ。
+    h.rankVal = (1-Math.min(minC,1))*2.5 + (1-Math.min(minD,1))*2
+              + solidCnt*1.2 + kickCnt*0.4 + (1-Math.min(avgC,2)/2)*2;
+  });
+
+  // 消去が少ない順 → 評価値(着差・上がり・安定地力) → 馬番。
+  const ranked=[...horses.filter(h=>h.runs.length>0)].sort((a,b)=>
+    (a.cutCount-b.cutCount) || (b.rankVal-a.rankVal) || (a.num-b.num));
+  // 印は◎と☆だけ入れ替える（○▲△はそのまま）。
+  // 順位1番手＝☆、2番手＝○、3番手＝▲、4番手＝△、5番手＝◎。
+  const marks=['☆','○','▲','△','◎'];
+  ranked.forEach((h,i)=>{ if(i<marks.length) h.mark=marks[i]; });
+  return horses;
+}
+// 距離からコーナー数（＝通過順に並ぶ順位の個数の目安）を返す。
+function cornersOf(dist){
+  if(!dist) return 4;
+  if(dist<=1000) return 1;
+  if(dist<=1400) return 2;
+  if(dist<=1500) return 3;
+  return 4;
+}
+
+// 通過順を順位の配列に分解する。
+// 競馬の絶対ルール：各順位は1〜18。二桁順位(10〜18)は十の位が必ず「1」。
+// 問題の核心：先頭が "11.." のとき 11番手 か 1番手+1番手 か曖昧。
+//   これは「その走のコーナー数」で決まる。コーナー数は距離で決まる（下記 expCorners）。
+//   そこで、ありうる分解を列挙し、要素数が期待コーナー数に最も近いものを選ぶ。
+function expCorners(dist){
+  if(!dist) return 4;
+  if(dist<=1200) return 2;   // 短距離は2〜3、概ね2
+  if(dist<=1500) return 3;
+  return 4;                   // 1600m以上は4コーナー
+}
+function splitPassage(p, dist){
+  if(!p||!/^\d+$/.test(p)) return [];
+  const L=p.length;
+  const want=expCorners(dist);
+  // 候補を生成：各位置で「十の位1かつ次が0-8」を二桁にするか1桁にするかを全探索。
+  // ただし二桁にできるのは p[i]==='1' && p[i+1]∈0-8 のときだけ（競馬の二桁順位は10-18）。
+  const results=[];
+  (function rec(i, acc){
+    if(results.length>200) return;        // 安全弁
+    if(i===L){ results.push(acc.slice()); return; }
+    // 1桁として読む
+    if(+p[i]>=1){ acc.push(+p[i]); rec(i+1, acc); acc.pop(); }
+    // 二桁として読む（10-18のみ）
+    if(p[i]==='1' && i+1<L && p[i+1]>='0' && p[i+1]<='8'){
+      acc.push(+p.substr(i,2)); rec(i+2, acc); acc.pop();
+    }
+  })(0, []);
+  // 妥当な候補（全要素1〜18、要素数2〜4）に絞る
+  let cand=results.filter(a=> a.length>=1 && a.length<=4 && a.every(v=>v>=1&&v<=18));
+  if(cand.length===0) cand=results.filter(a=>a.every(v=>v>=1&&v<=18));
+  if(cand.length===0) return p.split('').map(c=>+c).filter(v=>v>=1);
+  // 要素数が期待コーナー数に最も近い候補を選ぶ。同点なら要素数が多い方（二桁を作りすぎない＝
+  // 逃げ馬1111を1-1-1-1と読む方）を優先。
+  cand.sort((a,b)=>{
+    const da=Math.abs(a.length-want), db=Math.abs(b.length-want);
+    if(da!==db) return da-db;
+    return b.length-a.length;      // 近さ同じなら要素数多い（1桁優先）
+  });
+  return cand[0];
+}
+
+// 枠番：頭数に応じて馬番から枠を決める標準ルール（netkeiba/JRA共通）
+function wakuOf(num, field){
+  if(field<=8) return num;
+  const base=Math.floor(field/8), rem=field%8;
+  let cuts=[], n=0;
+  for(let w=1;w<=8;w++){ const cnt=base+(w>8-rem?1:0); cuts.push([n+1,n+cnt]); n+=cnt; }
+  for(let w=0;w<8;w++){ if(num>=cuts[w][0]&&num<=cuts[w][1]) return w+1; }
+  return 8;
+}
+
+function renderRace(parsed){
+  const r=parsed.race;
+  let html=`<div class="race-hdr">${r.venue} ${r.rNum} ${r.rName} ${r.surface}${r.dist}m ${r.track}`;
+  html+=`<div class="sub">出走 ${parsed.horses.length}頭</div></div>`;
+
+  // 並び順は「印の順」（◎○▲△☆→無印）。上からそのまま馬券を組めるようにする。
+  const markOrder={'◎':0,'○':1,'▲':2,'△':3,'☆':4};
+  const ord=h=> (h.mark!=null && markOrder[h.mark]!=null)? markOrder[h.mark] : 99;
+  const ranked=[...parsed.horses].sort((a,b)=>
+    (ord(a)-ord(b)) || ((a.cutCount||0)-(b.cutCount||0)) || ((b.rankVal||0)-(a.rankVal||0)) || (a.num-b.num));
+
+  html+=`<table class="main-tbl">`;
+  html+=`<tr><th>印</th><th>馬番</th><th class="lft">馬名</th><th class="lft">騎手</th><th>消去</th><th>人気</th><th>オッズ</th></tr>`;
+  ranked.forEach(h=>{
+    html+=`<tr>`;
+    html+=`<td class="mk">${h.mark||''}</td>`;
+    html+=`<td><span class="num waku${h.waku||0}">${h.num}</span></td>`;
+    html+=`<td class="lft hn">${h.name}</td>`;
+    html+=`<td class="lft jk">${h.jockey||''}</td>`;
+    const cc = (h.cutCount>=99)?'初':(h.cutCount===0?'残':h.cutCount+'消');
+    html+=`<td class="dm">${cc}</td>`;
+    html+=`<td class="nin">${h.ninki!=null?h.ninki+'人':'-'}</td>`;
+    html+=`<td class="nin">${h.odds!=null?h.odds:'-'}</td>`;
+    html+=`</tr>`;
+  });
+  html+=`</table>`;
+
+  html+=`<h2 class="sec">消去法（該当が少ない馬から ◎○▲△☆。消去理由を各馬に表示）</h2>`;
+  ranked.forEach(h=>{
+    html+=`<div class="detail">`;
+    html+=`<div class="dhdr"><span class="mk">${h.mark||'　'}</span><span class="num waku${h.waku||0}">${h.num}</span><span class="hn">${h.name}</span><span class="dm">${h.cutCount>=99?'初出走':(h.cutCount===0?'消去なし（残）':h.cutCount+'項目で消去')}</span></div>`;
+    if(h.cutReasons && h.cutReasons.length){
+      html+=`<div class="cuts">${h.cutReasons.map(c=>`<span class="cut">✕ ${c}</span>`).join('')}</div>`;
+    } else if(h.runs.length){
+      html+=`<div class="cuts"><span class="keep">消去条件に該当なし＝残</span></div>`;
+    }
+    if(h.runs.length){
+      html+=`<table class="dtbl"><tr><th class="lft">走</th><th>着順</th><th>着差</th><th>上3F</th><th>3F差</th><th>濃さ</th><th>通過</th><th class="lft">条件</th></tr>`;
+      h.runs.forEach((x,i)=>{
+        const chakuCls = x.yellowChaku?'yellow':(x.bestChaku?'best':(x.greenChaku?'green':(x.worstChaku?'worst':'')));
+        const agariCls = x.worstAgari?'worst':(x.bestAgari?'best':'');
+        const diffCls  = x.yellowDiff?'yellow':(x.bestDiff?'best':(x.greenDiff?'green':(x.worstDiff?'worst':'')));
+        const isPeak = x.density===h.bestDensity && h.bestDensity>=2
+                       && (!h.bonusSameCond || x.sameDist || x.sameCourse || x.sameBoth);
+        const ps=splitPassage(x.passage, x.dist);
+        const start=ps.length?ps[0]:null, last=ps.length?ps[ps.length-1]:null;
+        let passCls='';
+        if((start!=null&&start<=2)||(last!=null&&last<=4)) passCls='best';
+        const passStr = ps.length? ps.join('-') : (x.passage||'-');
+        html+=`<tr>`;
+        html+=`<td class="lft">${i+1}走前</td>`;
+        html+=`<td class="chk">${x.chakujun!=null?x.chakujun+'着':'-'}</td>`;
+        html+=`<td class="${chakuCls}">${x.chakusa!=null?x.chakusa:'-'}</td>`;
+        html+=`<td class="${agariCls}">${x.agari!=null?x.agari:'-'}</td>`;
+        html+=`<td class="${diffCls}">${x.agariDiff!=null?x.agariDiff:'-'}</td>`;
+        html+=`<td class="${isPeak?'peak':''}">${x.density||0}</td>`;
+        html+=`<td class="${passCls}">${passStr}</td>`;
+        const condCls = x.sameBoth?'cboth':(x.sameCourse?'ccourse':(x.sameDist?'cdist':'cond'));
+        html+=`<td class="lft ${condCls}">${x.venue}${x.surface}${x.dist} ${x.track}</td>`;
+        html+=`</tr>`;
+      });
+      html+=`</table>`;
+    } else {
+      html+=`<div class="cond">初出走（走破データなし／加点対象外）</div>`;
+    }
+    html+=`</div>`;
+  });
+  return html;
+}
+</script>
+</body>
+</html>
